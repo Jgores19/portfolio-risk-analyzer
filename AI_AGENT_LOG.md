@@ -29,7 +29,3 @@
   - Automated testing: Executed `py -m pytest -v`. All 16 automated tests passed in 1.49 seconds.
   - Smoke testing: Launched Streamlit via `py -m streamlit run app.py` on port 8501 and verified HTTP status 200 response and headless application stability.
 
-- **What I learned:**
-  - The difference between total volatility (penalized by Sharpe ratio) and downside volatility (isolated by Sortino ratio) is crucial in modern portfolio management, because investors only dislike downward volatility.
-  - Beta ($\beta = \text{Cov}(r_p, r_b) / \text{Var}(r_b)$) and Jensen's Alpha ($\alpha$) provide the standard academic baseline for evaluating whether a diversified portfolio is genuinely outperforming the S&P 500 on a risk-adjusted basis.
-  - Maintaining API robustness requires accounting for strict provider rate limits (e.g., 5 calls/min on Alpha Vantage) and avoiding brittle UI styling methods that change across major library versions.
