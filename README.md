@@ -1,146 +1,78 @@
-# Investment Portfolio Risk Analyzer (Project 2)
+Investment Portfolio Risk Analyzer (Project 2)
+For this project, I built an Investment Portfolio Risk Analyzer using Python and Streamlit. I wanted to create something that could show how different stock choices and investment amounts affect a portfolio's performance and risk. The app also compares the portfolio with a market benchmark so users can see the differences.
+What the app does
+- Allows users to select at least three stocks or ETFs and enter investment amounts or percentage weights.
+- Calculates portfolio returns, annualized volatility, Sharpe ratio, maximum drawdown, and other risk measures.
+- Compares the portfolio with SPY (the default benchmark), VTI, QQQ, or another available security.
+- Shows charts for portfolio allocation, growth compared with the benchmark, drawdowns, daily returns, and stock correlations.
+- Lets users change their investments and assumed risk-free rate, and download price and return data as CSV files.
+- Gives error messages for invalid inputs, unavailable stocks, or API problems instead of crashing.
+Stock market data
+The app uses the Alpha Vantage API to get actual historical daily stock prices. It calls the TIME_SERIES_DAILY endpoint with outputsize=compact, which generally returns up to 100 recent daily closing prices. Users enter their own free API key in the dashboard. The app caches downloaded prices for an hour to limit repeated requests.
 
-A Python/Streamlit financial technology prototype that helps investors understand how asset allocation changes portfolio performance, volatility, concentration and downside risk. Users choose **three or more stocks/ETFs**, enter dollar allocations or percentage weights, and compare a weighted portfolio to a market ETF benchmark.
+Alpha Vantage limits requests on free accounts, so the app may need to wait if the daily limit is reached. The prices are not live quotes. The data also uses unadjusted closing prices, which means it does not properly account for dividends or stock splits.
 
-## Features and assignment mapping
-
-- **Securities and allocation:** choose three or more securities; enter dollars or weights; edit allocations interactively; support for custom ticker symbols in API mode.
-- **Portfolio returns:** calculates historical daily portfolio returns, cumulative compounded returns, and annualized compounded return (CAGR).
-- **Risk measures:** annualized volatility, annualized-mean Sharpe ratio, Sortino ratio (downside deviation), maximum drawdown, and 95% 1-day Value at Risk (VaR).
-- **Benchmark comparison (SPY):** benchmark delta indicators on all primary metric cards, portfolio Beta ($\beta$), and annualized Jensen's Alpha ($\alpha$) relative to the S&P 500.
-- **Visualizations:** allocation doughnut chart; portfolio vs benchmark growth of $10,000; drawdown time series; daily returns distribution histogram; correlation heatmap.
-- **Benchmark:** choose SPY (default), VTI, QQQ, or another listed ETF/stock for comparison.
-- **External financial API:** Alpha Vantage `TIME_SERIES_DAILY` for actual historical daily closing prices using your **own free API key** with clear rate-limit handling.
-- **Offline demonstration:** deterministic simulated prices, **not real historical prices**, for running without an API key.
-- **Error handling:** invalid allocations, missing or short history, invalid tickers, API outages and rate limits produce clear, non-crashing messages.
-- **Downloads:** export both the aligned historical closing-price table and daily returns as CSV.
-
-## Install and run (Windows PowerShell)
-
-1. Download/extract the project folder, open PowerShell or a VS Code terminal inside `portfolio-risk-analyzer`.
-2. Ensure Python 3.10 or newer is installed. Create a virtual environment:
-
-```powershell
+I also included an Illustrative demo dataset so someone can try the app without an API key. This data is simulated and is not actual stock performance.
+- Alpha Vantage API documentation
+- Get a free API key
+How to run the app
+You need Python 3.10 or newer. Download the repository and open its folder in Antigravity, VS Code, or a terminal. Run these commands in Windows PowerShell:
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-```
-
-3. Launch:
-
-```powershell
 python -m streamlit run app.py
-```
+On Mac or Linux, create the environment with python3 -m venv .venv and activate it with source .venv/bin/activate before installing the requirements and starting Streamlit.
 
-4. Open the local Streamlit URL printed by the command (usually `http://localhost:8501`). Choose the **Illustrative demo dataset**, keep the default AAPL / MSFT / NVDA weights, and press **Analyze portfolio**. Try adjusting your investments, benchmark, and risk-free rate.
-5. For real API data, obtain a free key at [Alpha Vantage](https://www.alphavantage.co/support/#api-key), choose **Alpha Vantage API** in the sidebar, and paste your key in the password field (it is not stored in GitHub). Then analyze.
+The terminal will display a local address, usually http://localhost:8501. Open it in your browser, select at least three stocks, enter the investment amounts, and click Analyze portfolio. To use real data, select Alpha Vantage API in the sidebar and enter your API key. You can also select the demo dataset to test the app without a key.
+Financial calculations
+The app lines up available prices by date before calculating the returns. It does not fill in missing prices. The main calculations are:
+- Daily stock return: Today's closing price divided by yesterday's closing price, minus one.
+- Portfolio return: Each stock's daily return is multiplied by its portfolio weight and added together. The model assumes the target weights are reset each trading day.
+- Total return: Compounds the daily portfolio returns over the period.
+- Annualized return: Converts the compounded return to a yearly rate using 252 trading days.
+- Annualized volatility: Standard deviation of daily returns multiplied by the square root of 252.
+- Sharpe ratio: Annualized average return minus the selected risk-free rate, divided by annualized volatility.
+- Maximum drawdown: The biggest percentage decline from an earlier portfolio high.
+I included a few additional measures. The Sortino ratio focuses on downside volatility, while Value at Risk (95%) uses the fifth percentile of daily returns to estimate a one-day loss threshold. Beta measures how sensitive the portfolio is to the benchmark, and Jensen's alpha compares the portfolio's return with a return based on that beta. The app also calculates concentration from squared portfolio weights and correlation between the stocks' daily returns.
+Example portfolio
+I tested the app with the following investments:
+Stock	Amount	Weight
+AAPL	$4,000	40%
+MSFT	$3,500	35%
+NVDA	$2,500	25%
 
-**Mac/Linux:** Replace the activation command with `source .venv/bin/activate` and use `python3` if necessary.
 
-> This environment-free ZIP ships source and tests, not installed Python packages. Installation is required. It is not hosted or deployed automatically.
+I used SPY as the benchmark. In one API test using prices through October 20, 2026, the dashboard showed 11.90% total return for the portfolio compared with 1.66% for SPY. However, the portfolio also had more volatility (21.40% compared with 12.40%) and a larger maximum drawdown. This helped show that a higher historical return can come with more risk.
 
-## API details, eligibility and limits
+Those results apply only to the dates analyzed. They are not a prediction of future performance.
+Testing
+Google Antigravity reviewed the app and ran the automated tests. It reported 16 tests passed, including tests for portfolio calculations, input validation, risk measures, demo data, and API response handling. To run the tests again, enter:
+python -m pytest -v
+I also opened the Streamlit dashboard with AAPL, MSFT, and NVDA, looked through the calculations and charts, and switched from the demo dataset to actual historical prices from Alpha Vantage. The app displayed 99 aligned trading days and compared my portfolio against SPY. I also checked the investment inputs and benchmark comparison. The automated API tests use controlled responses; the live dashboard test is separate evidence that the actual API connection worked.
+Screenshots
+I captured two screenshots of the dashboard using real Alpha Vantage data. The first shows the portfolio overview and growth chart, and the second shows the drawdown chart and comparison with SPY. I saved these for the Screenshots/ folder on GitHub. The screenshots identify Alpha Vantage API as the data source rather than the demo dataset.
+How I used AI tools
+I used ChatGPT to help make the first version of this project and organize the files. After that, I opened the project in Google Antigravity and asked its coding agent to review and improve the app. Antigravity found and fixed an error that could crash the risk comparison table. It also added more ways to measure risk, including Beta, Jensen's Alpha, the Sortino ratio, and Value at Risk. The agent improved the comparison with SPY, added support for custom stock tickers, improved API error messages, and expanded the tests from 5 to 16.
 
-Alpha Vantage API endpoint: `https://www.alphavantage.co/query` using `function=TIME_SERIES_DAILY`, `symbol`, `outputsize=compact`, `apikey`. The API returns **up to the latest 100 daily prices** in the free compact output, so the live analysis typically covers only about five months. Our fetch function calls the external API for each selected ticker/benchmark; it does not use mock data when API mode is selected. Responses are cached for one hour. Each unique uncached symbol consumes a request. Check limits before switching symbols repeatedly; Alpha Vantage publicly lists a standard free quota of 25 requests/day, subject to changes. No paid subscription is required for the basic endpoint.
+I then opened the dashboard, tried the portfolio inputs, and connected it to Alpha Vantage to see real historical prices. Working through this showed me how an AI coding tool can help find errors, add features, and test a finance application. More details about the agent's changes are in AI_AGENT_LOG.md.
+Limitations
+- The free API provides a limited amount of historical data, and the dashboard does not provide real-time prices.
+- Prices are unadjusted for dividends and stock splits, so some performance results may be distorted.
+- The model assumes daily rebalancing and does not include transaction costs, taxes, or slippage.
+- The results depend on the dates selected, and past performance does not guarantee future returns.
+- The demo dataset is simulated. The app is for education and does not place trades or give personalized financial advice.
+Main project files
+File or folder	Purpose
+app.py	Streamlit dashboard
+analytics.py	Portfolio return and risk calculations
+data.py	Alpha Vantage connection and demo data
+requirements.txt	Python packages needed to run the app
+tests/test_analytics.py	Financial calculation tests
+tests/test_data.py	Data handling tests
+Screenshots/	Images of the running application
+AI_AGENT_LOG.md	Notes about AI tool use
+AGENT_PROMPT.md	Development prompt
+DEMO_SCRIPT.md	Short presentation guide
 
-Source: [Alpha Vantage API documentation](https://www.alphavantage.co/documentation/#daily) and [Alpha Vantage support](https://www.alphavantage.co/support/).
 
-The other included source, `data.sample_prices()`, generates a seeded (2026) **hypothetical** set of 252 business-day prices across nine named tickers for demonstration; its values are not security quotes and MUST NOT be portrayed as real market performance. The application labels this mode prominently.
-
-## Financial methodology
-
-Let `w_i` be the entered allocations divided by their sum, `P_i,t` the daily closing price, and `r_i,t = P_i,t / P_i,t-1 - 1` the simple daily security return.
-
-1. **Daily portfolio return:** `r_p,t = sum_i(w_i * r_i,t)`; fixed target weights are reset *daily*, simulating daily rebalancing.
-2. **Cumulative portfolio growth:** `V_t = $10,000 × product_(s<=t)(1 + r_p,s)`; total return = `V_final / V_start - 1`.
-3. **Annualized compounded return:** `(V_final/V_start)^(252 / N) - 1` for `N` daily return observations.
-4. **Annualized volatility:** `sample_std(daily_returns) × sqrt(252)`.
-5. **Sharpe ratio:** `(arithmetic_mean(daily_returns) × 252 - annual_risk_free_rate) / annualized_volatility`. With zero volatility, the Sharpe ratio is reported as unavailable.
-6. **Sortino ratio:** `(arithmetic_mean(daily_returns) × 252 - annual_risk_free_rate) / downside_deviation`, where downside deviation is `sqrt(mean(min(r_t, 0)^2)) * sqrt(252)`.
-7. **Maximum drawdown:** minimum of `(V_t / max_(s<=t) V_s - 1)`.
-8. **Value at Risk (VaR 95%):** 5th percentile of daily portfolio returns.
-9. **Portfolio Beta:** `Cov(r_portfolio, r_benchmark) / Var(r_benchmark)`. Measures systematic risk relative to SPY.
-10. **Jensen's Alpha:** `(annualized_return_p - risk_free_rate) - Beta * (annualized_return_benchmark - risk_free_rate)`.
-11. **Concentration:** the displayed Herfindahl index is `sum_i(w_i^2)`; higher values mean higher concentration.
-12. **Correlation:** Pearson correlations calculated using aligned daily simple returns.
-
-Dates are aligned by **intersection** before calculating returns. No forward filling is used. The comparison uses the same dates and return-calculation method. The benchmark can also be part of the portfolio (e.g., holding SPY and comparing against SPY); this is allowed but may make the portfolios more similar.
-
-## Example portfolio and interpretation
-
-Start with **AAPL $4,000 (40%) + MSFT $3,500 (35%) + NVDA $2,500 (25%)** and benchmark **SPY**. The dashboard reports portfolio vs. benchmark historical return and volatility, Sharpe ratio, deepest drawdown, and concentration. Adjust NVDA or any other stock weight to examine how historical exposure changes risk. If the portfolio's volatility is higher than SPY's, it experienced more day-to-day fluctuation in the observed period. A more negative drawdown means it experienced a deeper loss from an earlier peak. Results depend on the historical window and do not justify a forecast.
-
-## Testing
-
-```powershell
-py -m pytest -v
-```
-
-Included tests verify allocation normalization, invalid input rejection, zero-volatility Sharpe behavior, compounding and drawdown correctness, repeatable demo data, Beta/Alpha tracking vs benchmark, Sortino ratio, 95% VaR, API rate-limit formatting, and price response parsing. All 16 automated tests pass.
-
-Suggested manual test cases:
-
-1. Demo mode: AAPL/MSFT/NVDA, 40/35/25 and SPY: charts and measures appear.
-2. Change the allocations to 20/30/50, confirm chart labels update.
-3. Change to percentage weights totaling 99: validation message, no crash.
-4. Choose only two stocks: validation message, no crash.
-5. Real mode with no key, invalid ticker or quota exhausted: readable error message, no fabricated quotes.
-6. Real mode with valid key: confirms date range and 30+ overlapping trading days; investigate differences with an independent source.
-
-## Screenshots (required for GitHub submission)
-
-**Two screenshots must be captured after you run the application locally.** Add files to `screenshots/`:
-
-- `screenshots/01-portfolio-overview.png`: demo mode after clicking **Analyze portfolio**, showing allocations and growth chart.
-- `screenshots/02-risk-comparison.png`: risk metrics, drawdown chart and interpretation, ideally after changing weights or benchmark.
-
-You can use Windows **Win + Shift + S** and save the screenshots to this folder. Do not present screenshots from simulated prices as actual historical data. The `screenshots/` directory includes a checklist file; screenshots cannot be honestly included until the app has actually run.
-
-## AI development process
-
-The project was created with OpenAI's assistance to plan functions, produce Streamlit UI and financial analytics, build API handling, and add validation and unit tests. This conversation is ChatGPT-assisted work and **does not itself establish use of the required standalone coding agent**. Before submitting, open the repository in **OpenAI Codex** (or Claude Code / Google Antigravity) and use the supplied `AGENT_PROMPT.md`, inspect suggested revisions, run the tests, and record the real agent interaction and changes in `AI_AGENT_LOG.md`. Do not claim agent use unless completed.
-
-## Limitations
-
-- The real-data provider's free compact endpoint returns a limited window (~100 sessions) and has a request quota; the dashboard is not real-time.
-- The API sends **unadjusted close prices**, not adjusted/total-return prices. Splits and dividends can distort computed performance and risk, including misleading extreme drawdowns. This is a **prototype**, not an appropriate basis for trading decisions. An adjusted-price source would improve the model.
-- Demo prices are synthetic, not historical evidence.
-- Portfolio weights are assumed rebalanced every day, rather than buy-and-hold; no transaction costs, slippage, taxes, deposits, withdrawals, borrowing, or short selling.
-- Sharpe ratios and annualization are sensitive to the period sampled; historical values are not predictions.
-- All correlation and risk calculations are backward-looking; diversification may fail in stressed markets.
-- No trade placement, accounts, or personalized financial advice.
-
-## Files
-
-- `app.py` — interactive Streamlit dashboard
-- `analytics.py` — return and risk calculation functions
-- `data.py` — external API and sample dataset generator
-- `tests/test_analytics.py` — automated unit tests
-- `requirements.txt` — dependencies
-- `AGENT_PROMPT.md` — prompt for required AI coding agent
-- `AI_AGENT_LOG.md` — log template for authentic development evidence
-- `DEMO_SCRIPT.md` — short presentation script
-- `screenshots/README.md` — required screenshot checklist
-
-## GitHub upload
-
-Create an empty **public** GitHub repository called `portfolio-risk-analyzer`, then from this folder run:
-
-```powershell
-git init
-git add .
-git commit -m "Build Project 2 portfolio risk dashboard"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/portfolio-risk-analyzer.git
-git push -u origin main
-```
-
-Replace `YOUR_USERNAME` and follow GitHub's authentication prompt. If a repository already exists, use its real remote URL. **Never commit an API key.** After adding the two real screenshots and authentic agent notes, run:
-
-```powershell
-git add screenshots AI_AGENT_LOG.md
-git commit -m "Add tested app screenshots and AI agent development notes"
-git push
-```
-
-Submit the **actual GitHub repository URL** along with a short in-person or screen-recorded working demo.
+To reproduce the project, download the repository, install the dependencies, and run app.py using the instructions above. Do not upload your API key, .env or .venv files, or Python cache folders to GitHub.
